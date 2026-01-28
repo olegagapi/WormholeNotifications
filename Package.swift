@@ -1,26 +1,30 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
-    name: "MMWormhole",
+    name: "Wormhole",
     platforms: [
-        .iOS(.v9),
-        .macOS(.v10_10),
-        .watchOS(.v2)
+        .iOS(.v15),
+        .macOS(.v12),
+        .watchOS(.v8)
     ],
     products: [
         .library(
-            name: "MMWormhole",
-            targets: ["MMWormhole"]
+            name: "Wormhole",
+            targets: ["Wormhole"]
         )
     ],
     dependencies: [],
     targets: [
         .target(
-            name: "MMWormhole",
+            name: "Wormhole",
             dependencies: [],
-            path: "Source",
-            publicHeadersPath: "."
+            path: "Sources/Wormhole"
+        ),
+        .testTarget(
+            name: "WormholeTests",
+            dependencies: ["Wormhole"],
+            path: "Tests/WormholeTests"
         )
     ]
 )
