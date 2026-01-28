@@ -1,175 +1,257 @@
-# MMWormhole
+# Wormhole
 
-MMWormhole creates a bridge between an iOS or OS X extension and its containing application. The wormhole is meant to be used to pass data or commands back and forth between the two locations. Messages are archived to files which are written to the application's shared App Group. The effect closely resembles interprocess communication between the app and the extension, though true interprocess communication does not exist between extensions and containing apps. 
+[![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
+[![Platforms](https://img.shields.io/badge/Platforms-iOS%2015%20|%20macOS%2012%20|%20watchOS%208-blue.svg)](https://developer.apple.com)
+[![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager)
+[![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
-The wormhole also supports CFNotificationCenter Darwin Notifications in an effort to support realtime change notifications. When a message is passed to the wormhole, interested parties can listen and be notified of these changes on either side of the wormhole. The effect is nearly instant updates on either side when a message is sent through the wormhole.
-
-<p align="center">
-<img src="MMWormhole.gif") alt="Example App"/>
-</p>
-
-## Example
-
-```objective-c
-[self.wormhole passMessageObject:@{@"buttonNumber" : @(1)} identifier:@"button"];
-
-[self.wormhole listenForMessageWithIdentifier:@"button" 
-  listener:^(id messageObject) {
-    self.numberLabel.text = [messageObject[@"buttonNumber"] stringValue];
-}];
-```
-
-## Getting Started
-
-- Install MMWormhole via CocoaPods or by downloading the Source files
-- [Configure your App and Extension to support App Groups](https://developer.apple.com/library/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html)
-- Begin using MMWormhole to pass messages between your App and Extension
-
-### Note
-
-The MMWormhole Example app will only work with your shared App Group identifiers and Entitlements and is meant purely for reference
-
----
-## Installing MMWormhole
-<img src="https://cocoapod-badges.herokuapp.com/v/MMWormhole/badge.png"/><br/>
-You can install Wormhole in your project by using [CocoaPods](https://github.com/cocoapods/cocoapods):
-
-```Ruby
-pod 'MMWormhole', '~> 2.0.0'
-```
-
-[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)<br/>
-MMWormhole also supports Carthage.
+A modern Swift library for real-time message passing between an iOS/macOS app and its extensions.
 
 ## Overview
 
-MMWormhole is designed to make it easy to share very basic information and commands between an extension and it's containing application. The wormhole should remain stable whether the containing app is running or not, but notifications will only be triggered in the containing app if the app is awake in the background. This makes MMWormhole ideal for cases where the containing app is already running via some form of background modes. 
+Wormhole creates a bridge between your app and its extensions (widgets, watch apps, etc.) using shared app groups. Messages are persisted to the shared container and notifications are delivered via Darwin notifications, enabling near-instant communication even when both processes are running simultaneously.
 
-A good way to think of the wormhole is a collection of shared mailboxes. An identifier is essentially a unique mailbox you can send messages to. You know where a message will be delivered to because of the identifier you associate with it, but not necessarily when the message will be picked up by the recipient. If the app or extension are in the background, they may not receive the message immediately. By convention, sending messages should be done from one side to another, not necessarily from yourself to yourself. It's also a good practice to check the contents of your mailbox when your app or extension wakes up, in case any messages have been left there while you were away.
-
-MMWormhole uses NSKeyedArchiver as a serialization medium, so any object that is NSCoding compliant can work as a message. For many apps, sharing simple strings, numbers, or JSON objects is sufficient to drive the UI of a Widget or Apple Watch app. Messages can be sent and persisted easily as archive files and read later when the app or extension is woken up later.
-
-Using MMWormhole is extremely straightforward. The only real catch is that your app and it's extensions must support shared app groups. The group will be used for writing the archive files that represent each message. While larger files and structures, including a whole Core Data database, can be shared using App Groups, MMWormhole is designed to use it's own directory simply to pass messages. Because of that, a best practice is to initialize MMWormhole with a directory name that it will use within your app's shared App Group.
-
-### Initialization
-
-Initialize MMWormhole with your App Group identifier and an optional directory name
-
-Objective-C:
-```objective-c
-self.wormhole = [[MMWormhole alloc] initWithApplicationGroupIdentifier:@"group.com.mutualmobile.wormhole"
-                                                     optionalDirectory:@"wormhole"];
-```
-Swift:
-```swift
-let wormhole = MMWormhole(applicationGroupIdentifier: "group.com.mutualmobile.wormhole", optionalDirectory: "wormhole")
-```
-
-### Passing a Message
-
-Pass a message with an identifier for the message and a NSCoding compliant object as the message itself
-
-Objective-C:
-```objective-c
-[self.wormhole passMessageObject:@{@"titleString" : title} 
-                      identifier:@"messageIdentifier"];
-```
-
-Swift:
-```swift
-wormhole.passMessageObject("titleString", identifier: "messageIdentifier")
-```
-
-### Reading a Message
-
-You have two options for reading a message. You can obtain the message for an identifier at any time by asking the wormhole for the message. 
-
-Objective-C:
-```objective-c
-id messageObject = [self.wormhole messageWithIdentifier:@"messageIdentifier"];
-```
-
-You can also listen for changes to that message and be notified when that message is updated.
-
-Objective-C:
-```objective-c
-[self.wormhole listenForMessageWithIdentifier:@"messageIdentifier" 
- listener:^(id messageObject) {
-    // Do Something
-}];
-
-```
-Swift:
-```swift
-wormhole.listenForMessageWithIdentifier("messageIdentifier", listener: { (messageObject) -> Void in
-    if let message: AnyObject = messageObject {
-        // Do something
-    }
-})
-```
-
-### Designing Your Communication Scheme
-
-You can think of message passing between apps and extensions sort of like a web service. The web service has endpoints that you can read and write. The message identifiers for your MMWormhole messages can be thought of in much the same way. A great practice is to design very clear message identifiers so that you immediately know when reading your code who sent the message and why, and what the possible contents of the message might be. Just like you would design a web service with clear semantics, you should do the same with your wormhole messaging scheme.
-
-### Communication with WatchConnectivity
-
-The design of your communication scheme is even more important when you need to support watchOS 2. MMWormhole supports the [WatchConnectivity](https://developer.apple.com/library/prerelease/watchos/documentation/WatchConnectivity/Reference/WatchConnectivity_framework/index.html#//apple_ref/doc/uid/TP40015269) framework provided by Apple as an easy way to get up and running quickly with a basic implementation of WatchConnectivity. This support is not intended to replace WatchConnectivity entirely, and it's important to carefully consider your watch app's communication system to see where MMWormhole will fit best. 
-
-Here are two things you need to know if you want to use WatchConnectivity support in your app:
-
-- [MMWormholeSession](http://cocoadocs.org/docsets/MMWormhole/2.0.0/Classes/MMWormholeSession.html) is a singleton subclass of MMWormhole that supports listening for WatchConnectivity messages. It should be used as the listener for all MMWormhole messages you expect to receive from the WatchConnectivity framework. Be sure to activate the session once your listeners are set so that you can begin receiving message notifications.
-
-- Use the MMWormholeSessionTransiting types described below when creating your wormholes, but be careful not to send too many messages at once. You can easily overload the pipeline by sending too many messages at once.
-
-### Message Transiting Options
-
-The mechanism by which data flows through MMWormhole is defined by the [MMWormholeTransiting](http://cocoadocs.org/docsets/MMWormhole/2.0.0/Classes/MMWormholeTransiting.html) protocol. The default implementation of the protocol is called [MMWormholeFileTransiting](http://cocoadocs.org/docsets/MMWormhole/2.0.0/Classes/MMWormholeFileTransiting.html), which reads and writes messages as archived data files in the app groups shared container. Users of MMWormhole can implement their own version of this protocol to change the message passing behavior.
-
-There are three new implementations of the MMWormholeTransiting protocol that support the WCSession application context, message, and file transfer systems. You may only use one form of transiting with a wormhole at a time, so you need to consider which type of messaging system best fits a given part of your application.
-
-Most apps will find the application context system to be a good balance between real time messaging and simple persistence, so we recommend [MMWormholeSessionContextTransiting](http://cocoadocs.org/docsets/MMWormhole/2.0.0/Classes/MMWormholeSessionContextTransiting.html) as the best place to start. Check out the [documentation](https://developer.apple.com/library/prerelease/watchos/documentation/WatchConnectivity/Reference/WatchConnectivity_framework/index.html#//apple_ref/doc/uid/TP40015269) and header comments for descriptions about the other messaging types.
-
-You can get started quickly with a wormhole using one of the built in transiting types by calling the optional initializer to set up an instance with the right transiting type for your use case.
-
-Objective-C:
-```objective-c
-self.wormhole = [[MMWormhole alloc] initWithApplicationGroupIdentifier:@"group.com.mutualmobile.wormhole"
-                                                     optionalDirectory:@"wormhole"
-                                                     	transitingType:MMWormholeTransitingTypeSessionContext];
-```
-
-Swift:
-```swift
-let wormhole = MMWormhole(applicationGroupIdentifier: "group.com.mutualmobile.wormhole", 
-								   optionalDirectory: "wormhole",
-								      transitingType: .SessionContext)
-```
+**Key Features:**
+- Modern async/await API built on Swift actors
+- Type-safe messaging with Codable
+- AsyncSequence support for reactive message streams
+- Multiple storage strategies (file, coordinated file, UserDefaults)
+- Darwin notification-based real-time updates
 
 ## Requirements
 
-MMWormhole requires iOS 7.0 or higher or OS X 10.10 or higher.
-MMWormholeSession requires iOS 9.0 or higher.
+- iOS 15.0+ / macOS 12.0+ / watchOS 8.0+
+- Swift 5.9+
+- Xcode 15.0+
+
+## Installation
+
+### Swift Package Manager
+
+Add Wormhole to your project using Xcode:
+
+1. File > Add Package Dependencies
+2. Enter the repository URL
+3. Select version requirements
+
+Or add it directly to your `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/mutualmobile/MMWormhole.git", from: "3.0.0")
+]
+```
+
+Then add it as a dependency to your target:
+
+```swift
+.target(
+    name: "YourApp",
+    dependencies: ["Wormhole"]
+)
+```
+
+## Quick Start
+
+### 1. Configure App Groups
+
+Before using Wormhole, configure a shared app group in your app and extension targets:
+
+1. Select your target in Xcode
+2. Go to Signing & Capabilities
+3. Add the "App Groups" capability
+4. Create or select a group (e.g., `group.com.yourcompany.yourapp`)
+5. Repeat for your extension target
+
+### 2. Define Message Types
+
+Create Codable types for your messages:
+
+```swift
+struct CounterUpdate: Codable, Sendable {
+    let count: Int
+    let timestamp: Date
+}
+```
+
+### 3. Send Messages
+
+```swift
+import Wormhole
+
+// Initialize with your app group
+let wormhole = try Wormhole(appGroupIdentifier: "group.com.yourcompany.yourapp")
+
+// Send a message
+try await wormhole.send(CounterUpdate(count: 42, timestamp: .now), to: "counter")
+```
+
+### 4. Receive Messages
+
+Using AsyncSequence (recommended):
+
+```swift
+for try await update in wormhole.messages(CounterUpdate.self, for: "counter") {
+    print("Received count: \(update.count)")
+}
+```
+
+Or using callbacks:
+
+```swift
+let token = wormhole.listen(for: "counter", as: CounterUpdate.self) { update in
+    print("Received count: \(update.count)")
+}
+
+// Later, when done listening:
+wormhole.stopListening(token)
+```
+
+## API Reference
+
+### Initialization
+
+```swift
+// Simple initialization
+let wormhole = try Wormhole(appGroupIdentifier: "group.com.example.app")
+
+// With optional subdirectory
+let wormhole = try Wormhole(
+    appGroupIdentifier: "group.com.example.app",
+    directory: "wormhole"
+)
+
+// With full configuration
+let config = Configuration(
+    appGroupIdentifier: "group.com.example.app",
+    directory: "wormhole",
+    transitingStrategy: .coordinatedFile
+)
+let wormhole = try Wormhole(configuration: config)
+```
+
+### Sending Messages
+
+```swift
+// Send a Codable message
+try await wormhole.send(myMessage, to: "identifier")
+
+// Send a signal (notification only, no payload)
+wormhole.signal("identifier")
+```
+
+### Reading Messages
+
+```swift
+// Read the current message (if any)
+if let update = try await wormhole.message(CounterUpdate.self, for: "counter") {
+    print("Current count: \(update.count)")
+}
+```
+
+### Listening for Messages
+
+**AsyncSequence (recommended for SwiftUI/async contexts):**
+
+```swift
+// Returns an AsyncThrowingStream
+for try await message in wormhole.messages(MyMessage.self, for: "identifier") {
+    // Handle message
+}
+```
+
+**Callback-based:**
+
+```swift
+let token = wormhole.listen(for: "identifier", as: MyMessage.self) { message in
+    // Handle message
+}
+
+// Stop listening when done
+wormhole.stopListening(token)
+```
+
+### Cleanup
+
+```swift
+// Clear a specific message
+try await wormhole.clearMessage(for: "identifier")
+
+// Clear all messages
+try await wormhole.clearAllMessages()
+```
+
+## Configuration
+
+### Transiting Strategies
+
+Wormhole supports three storage strategies:
+
+| Strategy | Description | Best For |
+|----------|-------------|----------|
+| `.file` | Basic file storage (default) | Most use cases |
+| `.coordinatedFile` | Uses NSFileCoordinator | Heavy concurrent access |
+| `.userDefaults` | Shared UserDefaults | Simple, small messages |
+
+```swift
+let config = Configuration(
+    appGroupIdentifier: "group.com.example.app",
+    transitingStrategy: .coordinatedFile
+)
+```
+
+### Message Identifiers
+
+Message identifiers are type-safe and support string literals:
+
+```swift
+// Using string literals
+try await wormhole.send(message, to: "counter")
+
+// Or create explicitly
+let identifier = MessageIdentifier("counter")
+try await wormhole.send(message, to: identifier)
+```
+
+## Migration from MMWormhole (2.x)
+
+If you're upgrading from the Objective-C version:
+
+| MMWormhole 2.x | Wormhole 3.0 |
+|----------------|--------------|
+| `initWithApplicationGroupIdentifier:optionalDirectory:` | `init(appGroupIdentifier:directory:)` |
+| `passMessageObject:identifier:` | `send(_:to:) async throws` |
+| `messageWithIdentifier:` | `message(_:for:) async throws` |
+| `listenForMessageWithIdentifier:listener:` | `messages(_:for:)` or `listen(for:as:handler:)` |
+| `stopListeningForMessageWithIdentifier:` | `stopListening(_:)` |
+| `clearMessageContentsForIdentifier:` | `clearMessage(for:) async throws` |
+| `clearAllMessageContents` | `clearAllMessages() async throws` |
+
+**Key Differences:**
+- All operations are now `async` and require `await`
+- Messages must conform to `Codable` (not `NSCoding`)
+- JSON serialization replaces `NSKeyedArchiver`
+- The API uses Swift actors for thread safety
+- WatchConnectivity support has been removed (use file-based transiting)
 
 ## Troubleshooting
 
-If messages are not received on the other end, check Project->Capabilities->App Groups.<br/>
-Three checkmarks should be displayed in the steps section.
+**Messages not received:**
+1. Verify both targets have the same app group in Capabilities
+2. Check that all three checkmarks appear in App Groups setup
+3. Ensure you're using the correct app group identifier
 
-<p align="center">
-<img src="MMWormhole_correct.png") alt="Correct App Group Capabilities"/>
-</p>
-
-<p align="center">
-<img src="MMWormhole_incorrect.png") alt="Incorrect App Group Capabilities"/>
-</p>
-
-## Credits
-
-MMWormhole was created by [Conrad Stoll](http://conradstoll.com) at [Mutual Mobile](http://www.mutualmobile.com).
-
-Credit also to [Wade Spires](https://devforums.apple.com/people/mindsaspire), [Tom Harrington](https://twitter.com/atomicbird), and [Rene Cacheaux](https://twitter.com/rcachatx) for work and inspiration surrounding notifications between the containing app and it's extensions.
+**Serialization errors:**
+1. Verify your message types conform to `Codable`
+2. Check that all properties are encodable
+3. For custom types, implement `Codable` properly
 
 ## License
 
-MMWormhole is available under the MIT license. See the LICENSE file for more info.
+Wormhole is available under the MIT license. See the [LICENSE](LICENSE) file for details.
+
+## Credits
+
+Wormhole was originally created by [Conrad Stoll](http://conradstoll.com) at [Mutual Mobile](http://www.mutualmobile.com).
+
+Swift 3.0 rewrite with modern concurrency support.

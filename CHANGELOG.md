@@ -1,4 +1,34 @@
-##[2.0.0](https://github.com/mutualmobile/MMWormhole/milestones/2.0.0) (Tuesday, September 15th, 2015)
+## 3.0.0 - Swift Rewrite
+
+### Changed
+- Complete rewrite in Swift with modern concurrency (async/await, actors)
+- Minimum deployment targets: iOS 15.0, macOS 12.0, watchOS 8.0
+- Uses Codable instead of NSCoding for serialization
+- JSON serialization by default (human-readable)
+- Swift Package Manager only distribution
+
+### Added
+- `Wormhole` actor with full async/await API
+- `AsyncThrowingStream` for message listening via `messages(_:for:)`
+- Type-safe `MessageIdentifier` struct with string literal support
+- `TransitingStrategy` protocol with three implementations:
+  - `FileTransiting` - Basic file-based storage
+  - `CoordinatedFileTransiting` - NSFileCoordinator for safe concurrent access
+  - `UserDefaultsTransiting` - App group UserDefaults storage
+- Comprehensive error types with `LocalizedError` conformance
+- Callback-based listening with `ListenerToken` for cleanup
+- 127 unit tests covering all functionality
+
+### Removed
+- Objective-C implementation
+- WatchConnectivity transiting (file-based only for now)
+- CocoaPods support (SPM only)
+- Carthage support (SPM only)
+- NSCoding/NSKeyedArchiver serialization
+
+---
+
+## [2.0.0](https://github.com/mutualmobile/MMWormhole/milestones/2.0.0) (Tuesday, September 15th, 2015)
 **NEW**
 * Added support for the WatchConnectivity framework. (Conrad Stoll)
 
@@ -7,7 +37,7 @@
 * **FIXED** an issue ([#59](https://github.com/mutualmobile/MMWormhole/pull/59)) with the Carthage build configuration. (Thomas Guthrie, Stephen Wu)
 
 
-##[1.2.0](https://github.com/mutualmobile/MMWormhole/milestones/1.2.0) (Tuesday, June 2nd, 2015)
+## [1.2.0](https://github.com/mutualmobile/MMWormhole/milestones/1.2.0) (Tuesday, June 2nd, 2015)
 **NEW**
 * Added support for sending a notification by passing nil as the message. (Felix Lamouroux)
 * Added support for Carthage dependency management. (Lei Wang)
@@ -24,7 +54,7 @@
 * **FIXED** a typo in the README. (Marcus Mattsson)
 
 
-##[1.1.1](https://github.com/mutualmobile/MMWormhole/milestones/1.1.1) (Friday, February 13th, 2015)
+## [1.1.1](https://github.com/mutualmobile/MMWormhole/milestones/1.1.1) (Friday, February 13th, 2015)
 **NEW**
 * Added support for OS X in CocoaPods. (ConfusedVorlon)
 * Cleaned up the public headers and init method. (Jérôme Morissard)
@@ -32,7 +62,7 @@
 * Updated for latest beta of WatchKit. (Fadhel Chaabane)
 
 
-##[1.1.0](https://github.com/mutualmobile/MMWormhole/milestones/1.1.0) (Saturday, December 13th, 2014)
+## [1.1.0](https://github.com/mutualmobile/MMWormhole/milestones/1.1.0) (Saturday, December 13th, 2014)
 **NEW**
 * Added support for iOS 7 deployment targets. (Orta Therox)
 * Added full support for NSCoding and NSKeyedArchiver. (Martin Blech)
@@ -42,5 +72,5 @@
 * **FIXED** an issue([#6](https://github.com/mutualmobile/MMWormhole/pull/6)) where clear all message contents wasn't working properly. (Conrad Stoll)
 
 
-##1.0.0 (Monday, December 8th, 2014)
+## 1.0.0 (Monday, December 8th, 2014)
  * Initial Library Release
